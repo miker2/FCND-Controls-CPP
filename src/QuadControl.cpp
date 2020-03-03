@@ -12,6 +12,8 @@
 #include <systemlib/param/param.h>
 #endif
 
+#include <iostream>
+
 void QuadControl::Init()
 {
   BaseController::Init();
@@ -70,10 +72,44 @@ VehicleCommand QuadControl::GenerateMotorCommands(float collThrustCmd, V3F momen
 
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
 
-  cmd.desiredThrustsN[0] = mass * 9.81f / 4.f; // front left
-  cmd.desiredThrustsN[1] = mass * 9.81f / 4.f; // front right
-  cmd.desiredThrustsN[2] = mass * 9.81f / 4.f; // rear left
-  cmd.desiredThrustsN[3] = mass * 9.81f / 4.f; // rear right
+  // Basically, we need to solve the following system of equations:
+  //
+  //  [ 1  1  1  1 ] [T1]   [c ]
+  //  [ l -l -l  l ] [T2] = [mx]
+  //  [ l  l -l -l ] [T3]   [my]
+  //  [-k  k -k  k ] [T4]   [mz]
+
+  //std::cout << "Collective: " << collThrustCmd <<
+  //  ", Moment: [" << momentCmd[0] << ", " << momentCmd[1] <<
+  //  ", " << momentCmd[2] << "]" << std::endl;
+
+    const double l = L; // / sqrt(2);
+  cmd.desiredThrustsN[0] = 0.25 * collThrustCmd
+    + 0.25/l * momentCmd[0]
+    + 0.25/l * momentCmd[1]
+    + 0.25/kappa * momentCmd[2];
+  cmd.desiredThrustsN[1] = 0.25 * collThrustCmd
+    - 0.25/l * momentCmd[0]
+    + 0.25/l * momentCmd[1]
+    - 0.25/kappa * momentCmd[2];
+  cmd.desiredThrustsN[3] = 0.25 * collThrustCmd
+    - 0.25/l * momentCmd[0]
+    - 0.25/l * momentCmd[1]
+    + 0.25/kappa * momentCmd[2];
+  cmd.desiredThrustsN[2] = 0.25 * collThrustCmd
+    + 0.25/l * momentCmd[0]
+    - 0.25/l * momentCmd[1]
+    - 0.25/kappa * momentCmd[2];
+
+  //std::cout << "Desired thrust: [" << cmd.desiredThrustsN[0] <<
+  //  ", " << cmd.desiredThrustsN[1] <<
+  //  ", " << cmd.desiredThrustsN[2] <<
+  //  ", " << cmd.desiredThrustsN[3] << "]" << std::endl;
+
+  // cmd.desiredThrustsN[0] = mass * 9.81f / 4.f; // front left
+  // cmd.desiredThrustsN[1] = mass * 9.81f / 4.f; // front right
+  // cmd.desiredThrustsN[2] = mass * 9.81f / 4.f; // rear left
+  // cmd.desiredThrustsN[3] = mass * 9.81f / 4.f; // rear right
 
   /////////////////////////////// END STUDENT CODE ////////////////////////////
 
@@ -94,11 +130,14 @@ V3F QuadControl::BodyRateControl(V3F pqrCmd, V3F pqr)
   //  - you'll need parameters for moments of inertia Ixx, Iyy, Izz
   //  - you'll also need the gain parameter kpPQR (it's a V3F)
 
-  V3F momentCmd;
-
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
+  const V3F error = pqrCmd - pqr;
 
-  
+  // Calculate a rotational acceleration from the rate error:
+  const V3F r_accel = kpPQR * error;
+
+  // From the rotational acceleration, calculate a moment:
+  const V3F momentCmd = V3F(Ixx, Iyy, Izz) * r_accel;
 
   /////////////////////////////// END STUDENT CODE ////////////////////////////
 
@@ -128,9 +167,17 @@ V3F QuadControl::RollPitchControl(V3F accelCmd, Quaternion<float> attitude, floa
   Mat3x3F R = attitude.RotationMatrix_IwrtB();
 
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
+  const float b_x_c = accelCmd[0] / collThrustCmd / mass;
+  const float b_y_c = accelCmd[1] / collThrustCmd / mass;
 
+  const float b_x_a = R(0,2);
+  const float b_y_a = R(1,2);
 
+  const float bx_c_dot = kpBank * (b_x_c - b_x_a);
+  const float by_c_dot = kpBank * (b_y_c - b_y_a);
 
+  pqrCmd[0] = (1 / R(2,2)) * (R(1,0) * bx_c_dot - R(0,0) * by_c_dot);
+  pqrCmd[1] = (1 / R(2,2)) * (R(1,1) * bx_c_dot - R(0,1) * by_c_dot);
   /////////////////////////////// END STUDENT CODE ////////////////////////////
 
   return pqrCmd;
