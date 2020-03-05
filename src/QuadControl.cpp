@@ -84,23 +84,16 @@ VehicleCommand QuadControl::GenerateMotorCommands(float collThrustCmd, V3F momen
   //  [ l  l -l -l ] [T3]   [my]
   //  [-k  k -k  k ] [T4]   [mz]
 
-    const double l = L; // / sqrt(2);
-  cmd.desiredThrustsN[0] = 0.25 * (collThrustCmd
-    + momentCmd.x / l
-    + momentCmd.y / l
-    - momentCmd.z / kappa);
-  cmd.desiredThrustsN[1] = 0.25 * (collThrustCmd
-    - momentCmd.x / l
-    + momentCmd.y / l
-    + momentCmd.z / kappa);
-  cmd.desiredThrustsN[3] = 0.25 * (collThrustCmd
-    - momentCmd.x / l
-    - momentCmd.y / l
-    - momentCmd.z / kappa);
-  cmd.desiredThrustsN[2] = 0.25 * (collThrustCmd
-    + momentCmd.x / l
-    - momentCmd.y / l
-    + momentCmd.z / kappa);
+  const double l = L / sqrt(2.f);
+
+  const float mx = momentCmd.x / l;
+  const float my = momentCmd.y / l;
+  const float mz = momentCmd.z / kappa;
+
+  cmd.desiredThrustsN[0] = 0.25 * (collThrustCmd + mx + my - mz);
+  cmd.desiredThrustsN[1] = 0.25 * (collThrustCmd - mx + my + mz);
+  cmd.desiredThrustsN[3] = 0.25 * (collThrustCmd - mx - my - mz);
+  cmd.desiredThrustsN[2] = 0.25 * (collThrustCmd + mx - my + mz);
 
 #if 0 // Limit output
   for ( auto& v : cmd.desiredThrustsN ) {
