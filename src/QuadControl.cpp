@@ -256,16 +256,12 @@ V3F QuadControl::LateralPositionControl(V3F posCmd, V3F velCmd, V3F pos, V3F vel
   V3F accelCmd = accelCmdFF;
 
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
-  // Calculate position error.
-  V3F posErr = posCmd - pos;
-  // Add velocity command due to position error.
-  velCmd += kpPosXY * posErr;
+  // Apply feedback on position error and add to velocity command.
+  velCmd += kpPosXY * (posCmd - pos);
   // Limit the velocity command.
   velCmd.constrain(-maxSpeedXY, maxSpeedXY);
-  // Calculate the velocity error
-  V3F velErr = velCmd - vel;
-  // Add acceleration command due to velocity error.
-  accelCmd += kpVelXY * velErr;
+  // Apply feedback on velocity error & add to acceleration command.
+  accelCmd += kpVelXY * (velCmd - vel);
   // Limit the total acceleration command.
   accelCmd.constrain(-maxAccelXY, maxAccelXY);
 
