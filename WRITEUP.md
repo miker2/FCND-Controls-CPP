@@ -17,7 +17,9 @@ required to implement the quadrotor controller.
 
 ### Body Rate Control
 Body rate control was implemented using the simple proportional control law:
+
 ![rate control](/animations/rate_control.gif)
+
 Once implemented in `QuadControl::BodyRateController` the gains were tuned to achieve good
 performance.
 
