@@ -286,7 +286,7 @@ float QuadControl::YawControl(float yawCmd, float yaw)
 
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
   // Recenter the yaw around the commanded yaw angle & apply gain to get rate.
-  const float yawRateCmd = -kpYaw * recenter_angle(yaw, yawCmd);
+  const float yawRateCmd = kpYaw * (yawCmd - recenter_angle(yaw, yawCmd));
   /////////////////////////////// END STUDENT CODE ////////////////////////////
 
   return yawRateCmd;
